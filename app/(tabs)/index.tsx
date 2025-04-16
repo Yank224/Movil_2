@@ -1,74 +1,123 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, View, Text, FlatList, StyleSheet, ActivityIndicator, Image } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+interface Game {
+  id: number;
+  title: string;
+  short_description: string;
+  release_date: string;
+  thumbnail: string;
+}
 
 export default function HomeScreen() {
+  const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        // Utilizamos el proxy de CORS para modo web.
+        const response = await fetch('https://thingproxy.freeboard.io/fetch/https://www.freetogame.com/api/games');
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status}`);
+        }
+        const data: Game[] = await response.json();
+        setGames(data);
+      } catch (err) {
+        console.error(err);
+        setError(err instanceof Error ? err.message : 'Error desconocido');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGames();
+  }, []);
+
+  const renderItem = ({ item }: { item: Game }) => (
+    <View style={styles.itemContainer}>
+      <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
+      <View style={styles.textContainer}>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.description}>{item.short_description}</Text>
+        <Text style={styles.releaseDate}>Fecha de lanzamiento: {item.release_date}</Text>
+      </View>
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.centeredContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centeredContainer}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.container}>
+      <FlatList
+        data={games}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContainer}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  listContainer: {
+    padding: 10,
+  },
+  itemContainer: {
     flexDirection: 'row',
+    backgroundColor: '#f2f2f2',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+  },
+  thumbnail: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  textContainer: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  description: {
+    marginVertical: 5,
+    fontSize: 14,
+    color: '#555',
+  },
+  releaseDate: {
+    fontSize: 12,
+    color: '#888',
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  errorText: {
+    fontSize: 16,
+    color: 'red',
   },
 });
