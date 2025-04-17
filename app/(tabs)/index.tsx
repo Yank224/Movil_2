@@ -1,116 +1,179 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
-  SafeAreaView,
-  FlatList,
-  Pressable,
-  Image,
-  Text,
-  StyleSheet,
   View,
-  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
+const redirectUri = makeRedirectUri(); 
 
-interface Game {
-  id: number;
-  title: string;
-  thumbnail: string;
-}
+import {
+  signInWithCredential,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+} from 'firebase/auth';
 
-export default function HomeScreen() {
-  const [games, setGames] = useState<Game[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+import { auth } from '../../firebase';
+import { useLanguage } from '@/context/LanguageContext';
+import translations from '@/translations/Translations';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const LoginScreen: React.FC = () => {
   const router = useRouter();
+  const { language, toggleLanguage } = useLanguage();
+  const lang = language as 'es' | 'en'; // ✅ Soluciona el error TS7053
 
+  // Configura el login con Google
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: Platform.select({
+      ios: 'TU_CLIENT_ID_IOS',
+      android: '15937693597-npucda833jno205bn2hl1slj1uavs6b8.apps.googleusercontent.com',
+      default: '15937693597-npucda833jno205bn2hl1slj1uavs6b8.apps.googleusercontent.com',
+    }),
+    scopes: ['profile', 'email', 'openid'], 
+    responseType: 'id_token', 
+    extraParams: {
+      nonce: 'nonce', 
+    },    
+  });
+  
+
+  // Redirige si ya hay sesión iniciada
   useEffect(() => {
-    const fetchGames = async () => {
-      try {
-        // Para modo web se utiliza un proxy de CORS.
-        const response = await fetch(
-          'https://thingproxy.freeboard.io/fetch/https://www.freetogame.com/api/games'
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP Error: ${response.status}`);
-        }
-        const data: Game[] = await response.json();
-        setGames(data);
-      } catch (err: any) {
-        setError(err instanceof Error ? err.message : 'Unknown Error');
-      } finally {
-        setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('🔥 onAuthStateChanged se ejecutó');
+      if (user) {
+        console.log('✅ Sesión activa detectada:', user.email);
+        router.replace('/(tabs)/busqueda');
+      } else {
+        console.log('🚫 No hay sesión activa');
       }
-    };
-
-    fetchGames();
+    });
+    return unsubscribe;
   }, []);
+  
 
-  if (loading) {
-    return (
-      <View style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#fff" />
-      </View>
-    );
-  }
+  // Procesa la respuesta del login de Google
+  useEffect(() => {
+    console.log('👀 response:', response);
+  
+    if (response?.type === 'success') {
+      const idToken = response.params?.id_token;
 
-  if (error) {
-    return (
-      <View style={styles.centeredContainer}>
-        <Text style={styles.errorText}>Error: {error}</Text>
-      </View>
-    );
-  }
-
-  const renderItem = ({ item }: { item: Game }) => (
-    <Pressable
-      style={styles.itemContainer}
-      onPress={() =>
-        router.push({
-          pathname: '/game/[id]',
-          params: { id: item.id.toString() },
-        })
+      console.log("LLego hasta el token", idToken);
+      
+      if (idToken) {
+        console.log('✅ Sesión iniciada con Google');
+        const credential = GoogleAuthProvider.credential(idToken);
+        signInWithCredential(auth, credential)
+          .then(() => router.replace('/(tabs)/busqueda'))
+          .catch((error) =>
+            Alert.alert('Error', error.message || 'No se pudo iniciar sesión')
+          );
       }
-    >
-      <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-      <Text style={styles.title}>{item.title}</Text>
-    </Pressable>
-  );
+    } else if (response?.type === 'error') {
+      console.log('❌ Error en respuesta de Google:', response);
+    }
+  }, [response]);
+  
+
+  const notAvailableAlert = () => {
+    Alert.alert(
+      'No disponible',
+      'El inicio de sesión con Facebook no está disponible en móvil por ahora.'
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <FlatList
-        data={games}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContainer}
-      />
-    </SafeAreaView>
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
+        <Text style={styles.languageText}>{translations[lang].changeLang}</Text>
+      </TouchableOpacity>
+
+      <View style={styles.card}>
+        <Text style={styles.title}>{translations[lang].login}</Text>
+
+        <TouchableOpacity
+          disabled={!request}
+          style={[styles.button, styles.google]}
+          onPress={() => promptAsync()}
+        >
+          <Text style={styles.buttonText}>{translations[lang].loginGoogle}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.facebook]}
+          onPress={notAvailableAlert}
+        >
+          <Text style={styles.buttonText}>{translations[lang].loginFacebook}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
-}
+};
+
+export default LoginScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  listContainer: { padding: 10 },
-  centeredContainer: {
+  container: {
     flex: 1,
+    backgroundColor: '#1e3a8a',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',
+    padding: 16,
   },
-  itemContainer: {
-    marginBottom: 15,
-    alignItems: 'center',
-    backgroundColor: '#333',
+  languageButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 30,
+    right: 20,
+    backgroundColor: '#374151',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 8,
-    padding: 10,
   },
-  thumbnail: { width: 150, height: 150, borderRadius: 8 },
-  title: {
-    marginTop: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  languageText: {
     color: '#fff',
+    fontSize: 14,
   },
-  errorText: { color: 'red', fontSize: 16 },
+  card: {
+    backgroundColor: '#fff',
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    elevation: 5,
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    color: '#111827',
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  button: {
+    width: '100%',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  google: {
+    backgroundColor: '#3b82f6',
+  },
+  facebook: {
+    backgroundColor: '#1e40af',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
 });
