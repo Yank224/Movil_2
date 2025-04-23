@@ -35,7 +35,7 @@ const LoginScreen: React.FC = () => {
     clientId: Platform.select({
       ios: 'TU_CLIENT_ID_IOS',
       android: '15937693597-npucda833jno205bn2hl1slj1uavs6b8.apps.googleusercontent.com',
-      default: '15937693597-npucda833jno205bn2hl1slj1uavs6b8.apps.googleusercontent.com',
+      default: '15937693597-ik25kafmsvr7v5s5v7i48m4pq2fgon71.apps.googleusercontent.com',
     }),
     scopes: ['profile', 'email', 'openid'], 
     responseType: 'id_token', 
