@@ -74,7 +74,7 @@ export default function BusquedaScreen() {
           return s;
         });
       } else {
-        await addFavorite(g.id, { title: g.title, thumbnail: g.thumbnail });
+        await addFavorite(g.id, { title: g.title, thumbnail: g.thumbnail, genre: g.genre, platform: g.platform});
         setFavorites(prev => new Set(prev).add(g.id));
       }
     },

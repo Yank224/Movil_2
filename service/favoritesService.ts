@@ -7,14 +7,26 @@ export interface Favorite {
   id: string;
   title: string;
   thumbnail: string;
+  genre: string;
+  platform: string;
 }
 
 // Agregar un favorito
-export const addFavorite = async (gameId: number, gameData: { title: string; thumbnail: string }) => {
+export const addFavorite = async (gameId: number, gameData: {
+  title: string;
+  thumbnail: string;
+  genre: string;
+  platform: string;
+}) => {
   const user = getAuth().currentUser;
   if (!user) return;
 
-  await setDoc(doc(db, "users", user.uid, "favorites", gameId.toString()), gameData);
+  await setDoc(doc(db, "users", user.uid, "favorites", gameId.toString()), {
+    title: gameData.title,
+    thumbnail: gameData.thumbnail,
+    genre: gameData.genre,
+    platform: gameData.platform,
+  });
 };
 
 // Eliminar un favorito
@@ -37,6 +49,8 @@ export const getFavorites = async (): Promise<Favorite[]> => {
       id: doc.id,
       title: data.title,
       thumbnail: data.thumbnail,
+      genre: data.genre,
+      platform: data.platform,
     };
   });
 };
