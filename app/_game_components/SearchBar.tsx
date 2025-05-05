@@ -51,3 +51,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+/*import SearchBar from '../_game_components/SearchBar';
+import GameCard from '../_game_components/GameCard';
+import FilterModal from '../_game_components/FilterModal';
+*/
