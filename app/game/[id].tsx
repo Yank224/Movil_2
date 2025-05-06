@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   bannerImage: {
-    width: '40%',
+    width: '40%', 
     aspectRatio: 16 / 9,
     borderRadius: 12,
     marginTop: 20,
