@@ -102,7 +102,8 @@ export default function FavoritosScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={{ paddingTop: 10 }}>
+      <View style={{ paddingTop: 10, paddingHorizontal: 16 }}>
+        <Text style={styles.welcomeText}>Bienvenido a tu biblioteca de juegos</Text>
         <SearchBar
           query={query}
           onChange={setQuery}
@@ -177,4 +178,13 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
   },
+
+  welcomeText: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  
 });
