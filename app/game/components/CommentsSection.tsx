@@ -1,7 +1,17 @@
+// app/game/components/CommentsSection.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Pressable, StyleSheet, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../../../context/ThemeContext';
 
 interface Comment {
   id: string;
@@ -16,6 +26,9 @@ interface Props {
 }
 
 export default function CommentsSection({ gameId }: Props) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const [apiComments, setApiComments] = useState<Comment[]>([]);
   const [localComments, setLocalComments] = useState<Comment[]>([]);
   const [author, setAuthor] = useState('');
@@ -23,12 +36,11 @@ export default function CommentsSection({ gameId }: Props) {
   const [rating, setRating] = useState(5);
 
   useEffect(() => {
-    async function loadComments() {
-      // fetch example comments
+    async function load() {
       const res = await fetch(`https://jsonplaceholder.typicode.com/comments?postId=${gameId}`);
       if (res.ok) {
         const data = await res.json();
-        const mapped: Comment[] = data.map((c: any) => ({
+        const mapped = data.map((c: any) => ({
           id: c.id.toString(),
           author: c.name,
           text: c.body,
@@ -36,94 +48,152 @@ export default function CommentsSection({ gameId }: Props) {
         }));
         setApiComments(mapped);
       }
-      // load local
       const stored = await AsyncStorage.getItem(`comments_${gameId}`);
       if (stored) setLocalComments(JSON.parse(stored));
     }
-    loadComments();
+    load();
   }, [gameId]);
 
-  const allComments = [...apiComments, ...localComments];
+  const all = [...apiComments, ...localComments];
 
-  const addComment = async () => {
+  const add = async () => {
     if (!author.trim() || !text.trim()) return;
-    const newC: Comment = {
+    const n: Comment = {
       id: Date.now().toString(),
       author: author.trim(),
       text: text.trim(),
       rating,
       date: new Date().toLocaleDateString(),
     };
-    const updated = [newC, ...localComments];
-    setLocalComments(updated);
-    await AsyncStorage.setItem(`comments_${gameId}`, JSON.stringify(updated));
+    const upd = [n, ...localComments];
+    setLocalComments(upd);
+    await AsyncStorage.setItem(`comments_${gameId}`, JSON.stringify(upd));
     setAuthor('');
     setText('');
     setRating(5);
   };
 
   return (
-    <View style={styles.commentsSection}>
-      <Text style={styles.sectionTitle}>Comentarios de usuarios</Text>
+    <View style={styles.section}>
+      <Text style={[styles.title, { color: isDark ? '#00c2ff' : '#0077cc' }]}>
+        Comentarios de usuarios
+      </Text>
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            backgroundColor: isDark ? '#222' : '#f5f5f5',
+            color: isDark ? '#fff' : '#000',
+            borderColor: isDark ? '#444' : '#ccc',
+          },
+        ]}
         placeholder="Tu nombre"
-        placeholderTextColor="#888"
+        placeholderTextColor={isDark ? '#888' : '#666'}
         value={author}
         onChangeText={setAuthor}
       />
       <TextInput
-        style={[styles.input, { height: 80 }]}
+        style={[
+          styles.input,
+          {
+            height: 80,
+            backgroundColor: isDark ? '#222' : '#f5f5f5',
+            color: isDark ? '#fff' : '#000',
+            borderColor: isDark ? '#444' : '#ccc',
+          },
+        ]}
         placeholder="Tu comentario"
-        placeholderTextColor="#888"
+        placeholderTextColor={isDark ? '#888' : '#666'}
         multiline
         value={text}
         onChangeText={setText}
       />
       <View style={styles.ratingRow}>
-        <Text style={styles.label}>Puntuación:</Text>
-        {[1,2,3,4,5].map(n => (
+        <Text style={[styles.label, { color: isDark ? '#fff' : '#000' }]}>
+          Puntuación:
+        </Text>
+        {[1, 2, 3, 4, 5].map((n) => (
           <Pressable key={n} onPress={() => setRating(n)}>
-            <Ionicons name={n <= rating ? 'star' : 'star-outline'} size={20} color="#FFD700" style={styles.star} />
+            <Ionicons
+              name={n <= rating ? 'star' : 'star-outline'}
+              size={20}
+              color="#FFD700"
+              style={styles.star}
+            />
           </Pressable>
         ))}
       </View>
-      <TouchableOpacity style={styles.applyBtn} onPress={addComment}>
-        <Text style={styles.applyText}>Enviar comentario</Text>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          { backgroundColor: isDark ? '#00c2ff' : '#00a8e8' },
+        ]}
+        onPress={add}
+      >
+        <Text style={styles.buttonText}>Enviar comentario</Text>
       </TouchableOpacity>
-      {allComments.map(c => (
-        <View key={c.id} style={styles.commentCard}>
-          <View style={styles.commentHeader}>
-            <Text style={styles.commentAuthor}>{c.author}</Text>
-            <Text style={styles.commentDate}>{c.date}</Text>
-          </View>
-          {c.rating != null && (
-            <View style={styles.ratingRow}>
-              {[1,2,3,4,5].map(n => (
-                <Ionicons key={n} name={n <= c.rating! ? 'star' : 'star-outline'} size={16} color="#FFD700" style={styles.starSmall} />
-              ))}
+
+      <ScrollView>
+        {all.map((c) => (
+          <View
+            key={c.id}
+            style={[
+              styles.card,
+              {
+                backgroundColor: isDark ? '#111' : '#f5f5f5',
+                borderColor: isDark ? '#333' : '#ddd',
+              },
+            ]}
+          >
+            <View style={styles.header}>
+              <Text style={[styles.author, { color: isDark ? '#fff' : '#000' }]}>
+                {c.author}
+              </Text>
+              <Text style={[styles.date, { color: isDark ? '#888' : '#555' }]}>
+                {c.date}
+              </Text>
             </View>
-          )}
-          <Text style={styles.commentText}>{c.text}</Text>
-        </View>
-      ))}
+            {c.rating != null && (
+              <View style={styles.ratingRow}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Ionicons
+                    key={n}
+                    name={n <= c.rating! ? 'star' : 'star-outline'}
+                    size={16}
+                    color="#FFD700"
+                    style={styles.starSmall}
+                  />
+                ))}
+              </View>
+            )}
+            <Text style={[styles.text, { color: isDark ? '#ccc' : '#333' }]}>
+              {c.text}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  commentsSection: { paddingHorizontal: 16, marginTop: 32 },
-  sectionTitle: { color: '#00c2ff', fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
-  input: { backgroundColor: '#222', color: '#fff', borderRadius: 6, padding: 8, marginBottom: 12 },
+  section: { paddingHorizontal: 16, marginTop: 32 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  input: {
+    borderRadius: 6,
+    padding: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+  },
   ratingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  label: { color: '#fff', marginRight: 8 },
+  label: { marginRight: 8 },
   star: { marginHorizontal: 2 },
   starSmall: { marginRight: 1 },
-  applyBtn: { backgroundColor: '#00c2ff', paddingVertical: 10, borderRadius: 6, alignItems: 'center', marginBottom: 20 },
-  applyText: { color: '#000', fontWeight: 'bold' },
-  commentCard: { backgroundColor: '#111', padding: 12, borderRadius: 6, marginBottom: 12 },
-  commentHeader: { flexDirection: 'row', justifyContent: 'space-between' },
-  commentAuthor: { color: '#fff', fontWeight: 'bold' },
-  commentDate: { color: '#888' },
-  commentText: { color: '#ccc', marginTop: 6 },
+  button: { paddingVertical: 10, borderRadius: 6, alignItems: 'center', marginBottom: 20 },
+  buttonText: { color: '#000', fontWeight: 'bold' },
+  card: { padding: 12, borderRadius: 6, marginBottom: 12, borderWidth: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between' },
+  author: { fontWeight: 'bold' },
+  date: {},
+  text: { marginTop: 6 },
 });

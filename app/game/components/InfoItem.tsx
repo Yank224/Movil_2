@@ -1,27 +1,41 @@
+// app/game/components/InfoItem.tsx
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../context/ThemeContext';
 
-interface Props {
+interface InfoItemProps {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   value: string;
 }
 
-export default function InfoItem({ icon, label, value }: Props) {
+const InfoItem: React.FC<InfoItemProps> = ({ icon, label, value }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
-    <View style={styles.infoItem}>
-      <Ionicons name={icon} size={18} color="#00c2ff" style={styles.icon} />
-      <Text style={styles.infoText}>
-        <Text style={styles.infoLabel}>{label}:</Text> {value}
+    <View style={styles.row}>
+      <Ionicons
+        name={icon}
+        size={18}
+        color={isDark ? '#00c2ff' : '#0077cc'}
+        style={{ marginRight: 8 }}
+      />
+      <Text style={[styles.text, { color: isDark ? '#eee' : '#333' }]}>
+        <Text style={[styles.label, { color: isDark ? '#aaa' : '#555' }]}>
+          {label}:
+        </Text>{' '}
+        {value}
       </Text>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  infoItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  icon: { marginRight: 8 },
-  infoLabel: { fontWeight: 'bold', color: '#aaa' },
-  infoText: { color: '#eee', fontSize: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  label: { fontWeight: 'bold' },
+  text: { fontSize: 14 },
 });
+
+export default InfoItem;
