@@ -24,6 +24,7 @@ export default function FavoritosScreen() {
   const [topN, setTopN] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const router = useRouter();
+  
 
   // Cargar favoritos al enfocar
   useFocusEffect(

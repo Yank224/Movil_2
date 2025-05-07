@@ -1,38 +1,35 @@
+// context/LanguageContext.tsx
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-// Tipos permitidos para el idioma
-type SupportedLanguage = 'es' | 'en';
+// Definir la interfaz para el contexto de idioma
+interface LanguageContextProps {
+  language: string; // 'en' o 'es' por ejemplo
+  setLanguage: (language: string) => void; // Función para cambiar el idioma
+}
 
-// Estructura del contexto
-type LanguageContextType = {
-  language: SupportedLanguage;
-  toggleLanguage: () => void;
-};
+// Crear el contexto con un valor predeterminado de undefined
+const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
-// Crear contexto con tipo undefined por defecto
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
-
-// Provider que envolverá la app
-export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<SupportedLanguage>('es');
-
-  const toggleLanguage = () => {
-    setLanguage((prev) => (prev === 'es' ? 'en' : 'es'));
-  };
+// Componente LanguageProvider que envolverá a los componentes hijos para proporcionar el idioma
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Estado que maneja el idioma actual, por defecto es 'en'
+  const [language, setLanguage] = useState('en');
 
   return (
-    <LanguageContext.Provider value={{ language, toggleLanguage }}>
+    <LanguageContext.Provider value={{ language, setLanguage }}>
       {children}
     </LanguageContext.Provider>
   );
 };
 
-// Hook para acceder al contexto
-export const useLanguage = (): LanguageContextType => {
+// Hook personalizado useLanguage para acceder al contexto del idioma
+export const useLanguage = () => {
   const context = useContext(LanguageContext);
+
+  // Si el contexto no está disponible, lanzamos un error
   if (!context) {
     throw new Error('useLanguage must be used within a LanguageProvider');
   }
+
   return context;
 };
-

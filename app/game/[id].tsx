@@ -1,73 +1,99 @@
-import React, { useEffect, useState } from 'react';
+// app/game/[id].tsx
+import React, { useEffect, useState } from 'react'
 import {
-  ScrollView,
-  Image,
-  Text,
   View,
+  Text,
   StyleSheet,
   ActivityIndicator,
+  Image,
+  ScrollView,
   TouchableOpacity,
   Linking,
-} from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import Gallery from './components/Gallery';
-import InfoItem from './components/InfoItem';
-import CommentsSection from './components/CommentsSection';
+} from 'react-native'
+import { useLocalSearchParams } from 'expo-router'
+import { useTheme } from '../../context/ThemeContext'
+import Gallery from './components/Gallery'
+import InfoItem from './components/InfoItem'
+import CommentSection from './components/CommentsSection'
 
 interface GameDetail {
-  id: number;
-  title: string;
-  thumbnail: string;
-  description: string;
-  developer: string;
-  publisher: string;
-  release_date: string;
-  platform: string;
-  game_url: string;
-  screenshots: { id: number; image: string }[];
+  id: number
+  title: string
+  thumbnail: string
+  description: string
+  developer: string
+  publisher: string
+  release_date: string
+  platform: string
+  game_url: string
+  screenshots: { id: number; image: string }[]
+  trailer_url?: string
 }
 
 export default function GameDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const [game, setGame] = useState<GameDetail | null>(null);
-  const [mainImage, setMainImage] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { id } = useLocalSearchParams<{ id: string }>()
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+
+  const [game, setGame] = useState<GameDetail | null>(null)
+  const [mainImage, setMainImage] = useState<string>('')
+  const [trailerLink, setTrailerLink] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    async function fetchGame() {
+    async function load() {
       try {
-        const res = await fetch(
+        const resp = await fetch(
           `https://thingproxy.freeboard.io/fetch/https://www.freetogame.com/api/game?id=${id}`
-        );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: GameDetail = await res.json();
-        setGame(data);
-        setMainImage(data.thumbnail);
+        )
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+        const data: GameDetail = await resp.json()
+        setGame(data)
+        setMainImage(data.thumbnail)
+        if (data.trailer_url) {
+          setTrailerLink(data.trailer_url)
+        } else {
+          // Busca en YouTube el primer resultado
+          const q = encodeURIComponent(data.title + ' trailer')
+          setTrailerLink(`https://www.youtube.com/results?search_query=${q}`)
+        }
       } catch (e: any) {
-        setError(e.message);
+        setError(e.message)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
-    if (id) fetchGame();
-  }, [id]);
+    if (id) load()
+  }, [id])
 
-  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color="#00c2ff"/></View>;
-  if (error || !game) return <View style={styles.centered}><Text style={styles.errorText}>{error||'No data'}</Text></View>;
+  if (loading)
+    return (
+      <View style={[styles.centered, { backgroundColor: isDark ? '#000' : '#fff' }]}>
+        <ActivityIndicator size="large" color="#00c2ff" />
+      </View>
+    )
+  if (error)
+    return (
+      <View style={[styles.centered, { backgroundColor: isDark ? '#000' : '#fff' }]}>
+        <Text style={{ color: 'red' }}>Error: {error}</Text>
+      </View>
+    )
+  if (!game) return null
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Image source={{ uri: mainImage }} style={styles.bannerImage} />
-      <Text style={styles.title}>{game.title}</Text>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: isDark ? '#000' : '#fff' }]}>
+      {/* Imagen principal al 47% */}
+      <Image source={{ uri: mainImage }} style={styles.banner} />
 
-      <Gallery
-        thumbnail={game.thumbnail}
-        screenshots={game.screenshots}
-        onSelect={setMainImage}
-      />
+      <Text style={[styles.title, { color: isDark ? '#fff' : '#000' }]}>{game.title}</Text>
 
-      <View style={styles.divider} />
+      {/* Galería */}
+      <Gallery screenshots={game.screenshots} mainImage={mainImage} setMainImage={setMainImage} />
+
+      <View style={[styles.divider, { backgroundColor: isDark ? '#333' : '#ccc' }]} />
+
+      {/* Info */}
       <View style={styles.infoBox}>
         <InfoItem icon="calendar" label="Lanzamiento" value={game.release_date} />
         <InfoItem icon="game-controller" label="Plataforma" value={game.platform} />
@@ -75,34 +101,55 @@ export default function GameDetailScreen() {
         <InfoItem icon="people" label="Publisher" value={game.publisher} />
       </View>
 
-      <View style={styles.descriptionBox}>
-        <Text style={styles.sectionTitle}>Descripción</Text>
-        <Text style={styles.descriptionText}>{game.description}</Text>
+      {/* Descripción */}
+      <View style={[styles.descBox, { backgroundColor: isDark ? '#111' : '#f5f5f5' }]}>
+        <Text style={[styles.sectionTitle, { color: '#00c2ff' }]}>Descripción</Text>
+        <Text style={[styles.descText, { color: isDark ? '#ccc' : '#000' }]}>{game.description}</Text>
       </View>
 
+      {/* Trailer */}
+      {trailerLink && (
+        <View style={styles.trailerBox}>
+          <Text style={[styles.sectionTitle, { color: '#00c2ff' }]}>Trailer</Text>
+          <TouchableOpacity onPress={() => Linking.openURL(trailerLink)}>
+            <Text style={[styles.trailerText, { color: '#00c2ff' }]}>Ver trailer en YouTube</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Jugar ahora */}
       <TouchableOpacity
-        style={styles.downloadButton}
+        style={[styles.playBtn, { backgroundColor: '#00c2ff' }]}
         onPress={() => Linking.openURL(game.game_url)}
       >
-        <Text style={styles.downloadText}>Jugar ahora</Text>
+        <Text style={styles.playText}>Jugar ahora</Text>
       </TouchableOpacity>
 
-      <CommentsSection gameId={game.id} />
+      {/* Comentarios */}
+      <CommentSection gameId={game.id} />
     </ScrollView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
-  errorText: { color: 'red', fontSize: 16 },
-  container: { paddingBottom: 40, backgroundColor: '#000' },
-  bannerImage: { width: '50%', aspectRatio: 16/9, borderRadius: 12, marginTop: 20, alignSelf: 'center', resizeMode: 'cover' },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginVertical: 16, paddingHorizontal: 12 },
-  divider: { height: 1, backgroundColor: '#333', marginHorizontal: 20, marginBottom: 16, opacity: 0.5 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { paddingBottom: 40 },
+  banner: {
+    width: '47%',           // 50% - 3
+    aspectRatio: 16 / 9,
+    borderRadius: 12,
+    marginTop: 20,
+    alignSelf: 'center',
+    resizeMode: 'cover',
+  },
+  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginVertical: 16 },
+  divider: { height: 1, marginHorizontal: 20, marginBottom: 16, opacity: 0.5 },
   infoBox: { paddingHorizontal: 20, marginBottom: 20 },
-  descriptionBox: { backgroundColor: '#111', padding: 16, marginHorizontal: 16, borderRadius: 10, shadowColor: '#000', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 4 },
-  sectionTitle: { color: '#00c2ff', fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  descriptionText: { color: '#ccc', fontSize: 15, lineHeight: 22, textAlign: 'justify' },
-  downloadButton: { backgroundColor: '#00c2ff', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, marginTop: 24, alignSelf: 'center' },
-  downloadText: { color: '#000', fontWeight: 'bold', fontSize: 16 },
-});
+  descBox: { padding: 16, marginHorizontal: 16, borderRadius: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+  descText: { fontSize: 15, lineHeight: 22, textAlign: 'justify' },
+  trailerBox: { marginVertical: 20, paddingHorizontal: 16 },
+  trailerText: { fontSize: 16, fontWeight: 'bold', textDecorationLine: 'underline' },
+  playBtn: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, marginTop: 24, alignSelf: 'center' },
+  playText: { color: '#000', fontWeight: 'bold', fontSize: 16 },
+})
