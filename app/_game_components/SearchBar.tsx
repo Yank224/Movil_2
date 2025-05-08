@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, TextInput, StyleSheet, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext';  // Importar el hook useLanguage
+import translations from '../../translations/Translations';   // Importar el archivo de traducciones
 
 interface Props {
   query: string;
@@ -9,12 +11,15 @@ interface Props {
 }
 
 export default function SearchBar({ query, onChange, onOpenFilters }: Props) {
+  const { language } = useLanguage();  // Obtener el idioma actual
+  const placeholderText = translations[language].searchPlaceholder;  // Obtener el texto traducido del placeholder
+
   return (
     <View style={styles.container}>
       <Ionicons name="search" size={20} color="#888" style={styles.icon} />
       <TextInput
         style={styles.input}
-        placeholder="Busca un juego..."
+        placeholder={placeholderText}  // Usar el texto traducido
         placeholderTextColor="#888"
         value={query}
         onChangeText={onChange}
@@ -51,7 +56,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-/*import SearchBar from '../_game_components/SearchBar';
-import GameCard from '../_game_components/GameCard';
-import FilterModal from '../_game_components/FilterModal';
-*/

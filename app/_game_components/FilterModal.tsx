@@ -10,6 +10,8 @@ import {
   Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useLanguage } from '../../context/LanguageContext'; // Importar el hook useLanguage
+import translations from '../../translations/Translations';   // Importar las traducciones
 
 interface Props {
   visible: boolean;
@@ -36,6 +38,9 @@ export default function FilterModal({
   onSetTopN,
   onClose,
 }: Props) {
+  const { language } = useLanguage();  // Obtener el idioma actual
+  const { filtersTitle, genreLabel, platformLabel, topNLabel, applyBtn } = translations[language];  // Traducir las etiquetas
+  
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.bg}>
@@ -43,9 +48,9 @@ export default function FilterModal({
           <Pressable onPress={onClose} style={styles.closeBtn}>
             <Ionicons name="close" size={24} color="#fff" />
           </Pressable>
-          <Text style={styles.title}>Filtros</Text>
+          <Text style={styles.title}>{filtersTitle}</Text>
 
-          <Text style={styles.label}>Género:</Text>
+          <Text style={styles.label}>{genreLabel}:</Text>
           <FlatList
             data={genres}
             horizontal
@@ -54,16 +59,10 @@ export default function FilterModal({
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => onSetGenre(item === '(todos)' ? null : item)}
-                style={[
-                  styles.tag,
-                  selectedGenre === item && styles.tagActive,
-                ]}
+                style={[styles.tag, selectedGenre === item && styles.tagActive]}
               >
                 <Text
-                  style={[
-                    styles.tagText,
-                    selectedGenre === item && styles.tagTextActive,
-                  ]}
+                  style={[styles.tagText, selectedGenre === item && styles.tagTextActive]}
                 >
                   {item}
                 </Text>
@@ -71,7 +70,7 @@ export default function FilterModal({
             )}
           />
 
-          <Text style={styles.label}>Plataforma:</Text>
+          <Text style={styles.label}>{platformLabel}:</Text>
           <FlatList
             data={platforms}
             horizontal
@@ -80,16 +79,10 @@ export default function FilterModal({
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => onSetPlatform(item === '(todos)' ? null : item)}
-                style={[
-                  styles.tag,
-                  selectedPlatform === item && styles.tagActive,
-                ]}
+                style={[styles.tag, selectedPlatform === item && styles.tagActive]}
               >
                 <Text
-                  style={[
-                    styles.tagText,
-                    selectedPlatform === item && styles.tagTextActive,
-                  ]}
+                  style={[styles.tagText, selectedPlatform === item && styles.tagTextActive]}
                 >
                   {item}
                 </Text>
@@ -97,7 +90,7 @@ export default function FilterModal({
             )}
           />
 
-          <Text style={styles.label}>Top N:</Text>
+          <Text style={styles.label}>{topNLabel}:</Text>
           <View style={styles.topNWrapper}>
             <TextInput
               style={styles.topNInput}
@@ -117,7 +110,7 @@ export default function FilterModal({
           </View>
 
           <Pressable style={styles.applyBtn} onPress={onClose}>
-            <Text style={styles.applyText}>Aplicar</Text>
+            <Text style={styles.applyText}>{applyBtn}</Text>
           </Pressable>
         </View>
       </View>
