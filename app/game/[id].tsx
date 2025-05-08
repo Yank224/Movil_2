@@ -25,10 +25,11 @@ interface GameDetail {
 export default function GameDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { theme } = useTheme();
-  const { language } = useLanguage();  // Asegúrate de usar el contexto de idioma aquí
+  const { language } = useLanguage();  // Accede al idioma actual
   const isDark = theme === 'dark';
 
-  const { descriptionLabel, trailerLinkText, playButton, releaseDate, developer, publisher, platform, comments } = translations[language];  // Accede a las traducciones según el idioma
+  // Obtener las traducciones necesarias
+  const { descriptionLabel, trailerLinkText, playButton, releaseDate, developer, publisher, platform } = translations[language];
 
   const [game, setGame] = useState<GameDetail | null>(null);
   const [mainImage, setMainImage] = useState<string>('');
