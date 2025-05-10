@@ -1,8 +1,10 @@
+// app/_game_components/SearchBar.tsx
 import React from 'react';
 import { View, TextInput, StyleSheet, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLanguage } from '../../context/LanguageContext';  // Importar el hook useLanguage
-import translations from '../../translations/Translations';   // Importar el archivo de traducciones
+import { useLanguage } from '../../context/LanguageContext';
+import translations from '../../translations/Translations';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Props {
   query: string;
@@ -11,16 +13,29 @@ interface Props {
 }
 
 export default function SearchBar({ query, onChange, onOpenFilters }: Props) {
-  const { language } = useLanguage();  // Obtener el idioma actual
-  const placeholderText = translations[language].searchPlaceholder;  // Obtener el texto traducido del placeholder
+  const { language } = useLanguage();
+  const placeholderText = translations[language].searchPlaceholder;
+
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   return (
-    <View style={styles.container}>
-      <Ionicons name="search" size={20} color="#888" style={styles.icon} />
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? '#333' : '#eee' },
+      ]}
+    >
+      <Ionicons
+        name="search"
+        size={20}
+        color={isDark ? '#ccc' : '#666'}
+        style={styles.icon}
+      />
       <TextInput
-        style={styles.input}
-        placeholder={placeholderText}  // Usar el texto traducido
-        placeholderTextColor="#888"
+        style={[styles.input, { color: isDark ? '#fff' : '#000' }]}
+        placeholder={placeholderText}
+        placeholderTextColor={isDark ? '#888' : '#888'}
         value={query}
         onChangeText={onChange}
         returnKeyType="search"
@@ -29,7 +44,7 @@ export default function SearchBar({ query, onChange, onOpenFilters }: Props) {
       <Ionicons
         name="filter"
         size={24}
-        color="#fff"
+        color={isDark ? '#fff' : '#000'}
         style={styles.icon}
         onPress={onOpenFilters}
       />
@@ -40,7 +55,6 @@ export default function SearchBar({ query, onChange, onOpenFilters }: Props) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#222',
     borderRadius: 8,
     height: 40,
     alignItems: 'center',
@@ -52,7 +66,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#fff',
     fontSize: 14,
   },
 });

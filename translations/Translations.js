@@ -1,3 +1,4 @@
+// app/translations/Translations.ts
 const translations = {
   es: {
     loading: "Cargando jugadores...",
@@ -8,7 +9,8 @@ const translations = {
     loginGoogle: "Iniciar sesión con Google",
     loginFacebook: "Iniciar sesión con Facebook",
     logout: "Cerrar sesión",
-    changeLang: "Cambiar a Inglés",
+    changeLang: "ES/EN",        // ← Nuevo formato
+    themeLabel: "Tema",         // ← Etiqueta para el menú de tema
     Title: "Buscador de Jugadores online",
     removeFavorite: "Quitar de favoritos",
     searchPlaceholder: "Buscar un juego...",
@@ -38,7 +40,8 @@ const translations = {
     loginGoogle: "Sign in with Google",
     loginFacebook: "Sign in with Facebook",
     logout: "Log out",
-    changeLang: "Switch to Spanish",
+    changeLang: "EN/ES",        // ← Nuevo formato
+    themeLabel: "Theme",        // ← Etiqueta para el menú de tema
     Title: "Online Players Search",
     removeFavorite: "Remove from favorites",
     searchPlaceholder: "Search for a game...",

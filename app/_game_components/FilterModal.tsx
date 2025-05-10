@@ -1,3 +1,4 @@
+// app/_game_components/FilterModal.tsx
 import React from 'react';
 import {
   Modal,
@@ -10,8 +11,9 @@ import {
   Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLanguage } from '../../context/LanguageContext'; // Importar el hook useLanguage
-import translations from '../../translations/Translations';   // Importar las traducciones
+import { useLanguage } from '../../context/LanguageContext';
+import translations from '../../translations/Translations';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -38,78 +40,194 @@ export default function FilterModal({
   onSetTopN,
   onClose,
 }: Props) {
-  const { language } = useLanguage();  // Obtener el idioma actual
-  const { filtersTitle, genreLabel, platformLabel, topNLabel, applyBtn } = translations[language];  // Traducir las etiquetas
-  
+  const { language } = useLanguage();
+  const {
+    filtersTitle,
+    genreLabel,
+    platformLabel,
+    topNLabel,
+    applyBtn,
+  } = translations[language];
+
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.bg}>
-        <View style={styles.modal}>
+        <View
+          style={[
+            styles.modal,
+            { backgroundColor: isDark ? '#111' : '#f5f5f5' },
+          ]}
+        >
           <Pressable onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={24} color="#fff" />
+            <Ionicons
+              name="close"
+              size={24}
+              color={isDark ? '#fff' : '#000'}
+            />
           </Pressable>
-          <Text style={styles.title}>{filtersTitle}</Text>
 
-          <Text style={styles.label}>{genreLabel}:</Text>
+          <Text
+            style={[
+              styles.title,
+              { color: isDark ? '#fff' : '#000' },
+            ]}
+          >
+            {filtersTitle}
+          </Text>
+
+          <Text
+            style={[
+              styles.label,
+              { color: isDark ? '#ccc' : '#333' },
+            ]}
+          >
+            {genreLabel}:
+          </Text>
           <FlatList
             data={genres}
             horizontal
-            keyExtractor={g => g}
+            keyExtractor={(g) => g}
             contentContainerStyle={{ paddingVertical: 8 }}
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => onSetGenre(item === '(todos)' ? null : item)}
-                style={[styles.tag, selectedGenre === item && styles.tagActive]}
-              >
-                <Text
-                  style={[styles.tagText, selectedGenre === item && styles.tagTextActive]}
+            renderItem={({ item }) => {
+              const active = selectedGenre === item;
+              return (
+                <Pressable
+                  onPress={() =>
+                    onSetGenre(item === '(todos)' ? null : item)
+                  }
+                  style={[
+                    styles.tag,
+                    {
+                      backgroundColor: active
+                        ? isDark
+                          ? '#3b82f6'
+                          : '#60a5fa'
+                        : isDark
+                        ? '#222'
+                        : '#e1e1e1',
+                    },
+                  ]}
                 >
-                  {item}
-                </Text>
-              </Pressable>
-            )}
+                  <Text
+                    style={[
+                      styles.tagText,
+                      {
+                        color: active
+                          ? '#fff'
+                          : isDark
+                          ? '#ccc'
+                          : '#333',
+                        fontWeight: active ? 'bold' : 'normal',
+                      },
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </Pressable>
+              );
+            }}
           />
 
-          <Text style={styles.label}>{platformLabel}:</Text>
+          <Text
+            style={[
+              styles.label,
+              { color: isDark ? '#ccc' : '#333' },
+            ]}
+          >
+            {platformLabel}:
+          </Text>
           <FlatList
             data={platforms}
             horizontal
-            keyExtractor={p => p}
+            keyExtractor={(p) => p}
             contentContainerStyle={{ paddingVertical: 8 }}
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => onSetPlatform(item === '(todos)' ? null : item)}
-                style={[styles.tag, selectedPlatform === item && styles.tagActive]}
-              >
-                <Text
-                  style={[styles.tagText, selectedPlatform === item && styles.tagTextActive]}
+            renderItem={({ item }) => {
+              const active = selectedPlatform === item;
+              return (
+                <Pressable
+                  onPress={() =>
+                    onSetPlatform(item === '(todos)' ? null : item)
+                  }
+                  style={[
+                    styles.tag,
+                    {
+                      backgroundColor: active
+                        ? isDark
+                          ? '#3b82f6'
+                          : '#60a5fa'
+                        : isDark
+                        ? '#222'
+                        : '#e1e1e1',
+                    },
+                  ]}
                 >
-                  {item}
-                </Text>
-              </Pressable>
-            )}
+                  <Text
+                    style={[
+                      styles.tagText,
+                      {
+                        color: active
+                          ? '#fff'
+                          : isDark
+                          ? '#ccc'
+                          : '#333',
+                        fontWeight: active ? 'bold' : 'normal',
+                      },
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </Pressable>
+              );
+            }}
           />
 
-          <Text style={styles.label}>{topNLabel}:</Text>
+          <Text
+            style={[
+              styles.label,
+              { color: isDark ? '#ccc' : '#333' },
+            ]}
+          >
+            {topNLabel}:
+          </Text>
           <View style={styles.topNWrapper}>
             <TextInput
-              style={styles.topNInput}
+              style={[
+                styles.topNInput,
+                {
+                  backgroundColor: isDark ? '#222' : '#e1e1e1',
+                  color: isDark ? '#fff' : '#000',
+                },
+              ]}
               placeholder="0"
-              placeholderTextColor="#888"
+              placeholderTextColor={isDark ? '#888' : '#666'}
               keyboardType="numeric"
               value={topN.toString()}
-              onChangeText={t =>
+              onChangeText={(t) =>
                 onSetTopN(parseInt(t.replace(/\D/g, ''), 10) || 0)
               }
               returnKeyType="done"
               onSubmitEditing={() => Keyboard.dismiss()}
             />
-            <Text style={styles.topNDisplay}>
+            <Text
+              style={[
+                styles.topNDisplay,
+                { color: isDark ? '#ccc' : '#333' },
+              ]}
+            >
               {topN > 0 ? `Top ${topN}` : 'Sin Top'}
             </Text>
           </View>
 
-          <Pressable style={styles.applyBtn} onPress={onClose}>
+          <Pressable
+            style={[
+              styles.applyBtn,
+              { backgroundColor: isDark ? '#3b82f6' : '#2563eb' },
+            ]}
+            onPress={onClose}
+          >
             <Text style={styles.applyText}>{applyBtn}</Text>
           </Pressable>
         </View>
@@ -127,7 +245,6 @@ const styles = StyleSheet.create({
   },
   modal: {
     width: '90%',
-    backgroundColor: '#111',
     borderRadius: 12,
     padding: 16,
   },
@@ -138,22 +255,23 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   title: {
-    color: '#fff',
     fontSize: 20,
     marginBottom: 12,
     textAlign: 'center',
   },
-  label: { color: '#fff', marginTop: 8, fontWeight: 'bold' },
+  label: {
+    marginTop: 8,
+    fontWeight: 'bold',
+  },
   tag: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#222',
     borderRadius: 6,
     marginRight: 8,
   },
-  tagActive: { backgroundColor: '#3b82f6' },
-  tagText: { color: '#fff' },
-  tagTextActive: { color: '#fff', fontWeight: 'bold' },
+  tagText: {
+    fontSize: 14,
+  },
   topNWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -162,19 +280,21 @@ const styles = StyleSheet.create({
   topNInput: {
     width: 60,
     height: 40,
-    backgroundColor: '#222',
     borderRadius: 6,
-    color: '#fff',
     textAlign: 'center',
     marginRight: 12,
   },
-  topNDisplay: { color: '#fff', fontSize: 16 },
+  topNDisplay: {
+    fontSize: 16,
+  },
   applyBtn: {
     marginTop: 16,
-    backgroundColor: '#3b82f6',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
-  applyText: { color: '#fff', fontWeight: 'bold' },
+  applyText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
 });

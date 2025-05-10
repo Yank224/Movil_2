@@ -1,3 +1,4 @@
+// app/(auth)/login.tsx
 import React, { useEffect } from 'react';
 import {
   View,
@@ -11,108 +12,91 @@ import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { makeRedirectUri } from 'expo-auth-session';
-const redirectUri = makeRedirectUri(); 
-
 import {
   signInWithCredential,
   GoogleAuthProvider,
   onAuthStateChanged,
 } from 'firebase/auth';
-
 import { auth } from '../../firebase';
-import { useLanguage } from '@/context/LanguageContext';
-import translations from '@/translations/Translations';
+import { useLanguage } from '../../context/LanguageContext';
+import translations from '../../translations/Translations';
+import SettingsMenu from '../components/SettingsMenu';
+import { useTheme } from '../../context/ThemeContext';
 
 WebBrowser.maybeCompleteAuthSession();
+const redirectUri = makeRedirectUri();
 
 const LoginScreen: React.FC = () => {
   const router = useRouter();
-  const { language, toggleLanguage } = useLanguage();
-  const lang = language as 'es' | 'en'; // ✅ Soluciona el error TS7053
+  const { language } = useLanguage();
+  const lang = language as 'es' | 'en';
+  const t = translations[lang];
 
-  // Configura el login con Google
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: Platform.select({
       ios: 'TU_CLIENT_ID_IOS',
-      android: '15937693597-npucda833jno205bn2hl1slj1uavs6b8.apps.googleusercontent.com',
-      default: '15937693597-ik25kafmsvr7v5s5v7i48m4pq2fgon71.apps.googleusercontent.com',
+      android:
+        '15937693597-npucda833jno205bn2hl1slj1uavs6b8.apps.googleusercontent.com',
+      default:
+        '15937693597-ik25kafmsvr7v5s5v7i48m4pq2fgon71.apps.googleusercontent.com',
     }),
-    scopes: ['profile', 'email', 'openid'], 
-    responseType: 'id_token', 
-    extraParams: {
-      nonce: 'nonce', 
-    },    
+    scopes: ['profile', 'email', 'openid'],
+    responseType: 'id_token',
+    extraParams: { nonce: 'nonce' },
+    redirectUri,
   });
-  
 
-  // Redirige si ya hay sesión iniciada
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('🔥 onAuthStateChanged se ejecutó');
-      if (user) {
-        console.log('✅ Sesión activa detectada:', user.email);
-        router.replace('/(tabs)/busqueda');
-      } else {
-        console.log('🚫 No hay sesión activa');
-      }
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) router.replace('/(tabs)/favoritos');
     });
-    return unsubscribe;
+    return unsub;
   }, []);
-  
 
-  // Procesa la respuesta del login de Google
   useEffect(() => {
-    console.log('👀 response:', response);
-  
     if (response?.type === 'success') {
       const idToken = response.params?.id_token;
-
-      console.log("LLego hasta el token", idToken);
-      
       if (idToken) {
-        console.log('✅ Sesión iniciada con Google');
-        const credential = GoogleAuthProvider.credential(idToken);
-        signInWithCredential(auth, credential)
-          .then(() => router.replace('/(tabs)/busqueda'))
-          .catch((error) =>
-            Alert.alert('Error', error.message || 'No se pudo iniciar sesión')
-          );
+        const cred = GoogleAuthProvider.credential(idToken);
+        signInWithCredential(auth, cred)
+          .then(() => router.replace('/(tabs)/favoritos'))
+          .catch((e) => Alert.alert('Error', e.message));
       }
-    } else if (response?.type === 'error') {
-      console.log('❌ Error en respuesta de Google:', response);
     }
   }, [response]);
-  
 
   const notAvailableAlert = () => {
-    Alert.alert(
-      'No disponible',
-      'El inicio de sesión con Facebook no está disponible en móvil por ahora.'
-    );
+    Alert.alert('No disponible', 'Facebook login no está disponible aún.');
   };
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
-        <Text style={styles.languageText}>{translations[lang].changeLang}</Text>
-      </TouchableOpacity>
+    <View style={[styles.container, { backgroundColor: isDark ? '#000' : '#1e3a8a' }]}>
+      {/* ⚙️ Menú de configuración */}
+      <View style={styles.settings}>
+        <SettingsMenu />
+      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>{translations[lang].login}</Text>
+      <View style={[styles.card, { backgroundColor: isDark ? '#333' : '#fff' }]}>
+        <Text style={[styles.title, { color: isDark ? '#fff' : '#111827' }]}>
+          {t.login}
+        </Text>
 
         <TouchableOpacity
           disabled={!request}
           style={[styles.button, styles.google]}
           onPress={() => promptAsync()}
         >
-          <Text style={styles.buttonText}>{translations[lang].loginGoogle}</Text>
+          <Text style={styles.buttonText}>{t.loginGoogle}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.button, styles.facebook]}
           onPress={notAvailableAlert}
         >
-          <Text style={styles.buttonText}>{translations[lang].loginFacebook}</Text>
+          <Text style={styles.buttonText}>{t.loginFacebook}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -124,26 +108,17 @@ export default LoginScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e3a8a',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
   },
-  languageButton: {
+  settings: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 50 : 30,
-    right: 20,
-    backgroundColor: '#374151',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  languageText: {
-    color: '#fff',
-    fontSize: 14,
+    right: 16,
+    zIndex: 10,
   },
   card: {
-    backgroundColor: '#fff',
     width: '100%',
     maxWidth: 360,
     borderRadius: 16,
@@ -154,7 +129,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    color: '#111827',
     fontWeight: 'bold',
     marginBottom: 20,
   },
@@ -165,12 +139,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignItems: 'center',
   },
-  google: {
-    backgroundColor: '#3b82f6',
-  },
-  facebook: {
-    backgroundColor: '#1e40af',
-  },
+  google: { backgroundColor: '#3b82f6' },
+  facebook: { backgroundColor: '#1e40af' },
   buttonText: {
     color: '#fff',
     fontWeight: '600',

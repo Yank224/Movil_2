@@ -5,37 +5,38 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../context/ThemeContext';
 
 interface InfoItemProps {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: string;
   label: string;
   value: string;
 }
 
-const InfoItem: React.FC<InfoItemProps> = ({ icon, label, value }) => {
+export default function InfoItem({ icon, label, value }: InfoItemProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const textColor = isDark ? '#fff' : '#000';
+  const iconColor = '#00c2ff';
 
   return (
-    <View style={styles.row}>
-      <Ionicons
-        name={icon}
-        size={18}
-        color={isDark ? '#00c2ff' : '#0077cc'}
-        style={{ marginRight: 8 }}
-      />
-      <Text style={[styles.text, { color: isDark ? '#eee' : '#333' }]}>
-        <Text style={[styles.label, { color: isDark ? '#aaa' : '#555' }]}>
-          {label}:
-        </Text>{' '}
-        {value}
-      </Text>
+    <View style={styles.container}>
+      <Ionicons name={icon as any} size={20} color={iconColor} style={styles.icon} />
+      <Text style={[styles.label, { color: textColor }]}>{label}:</Text>
+      <Text style={[styles.value, { color: textColor }]}>{value}</Text>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  label: { fontWeight: 'bold' },
-  text: { fontSize: 14 },
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  icon: {
+    marginRight: 8,
+  },
+  label: {
+    fontWeight: 'bold',
+    marginRight: 4,
+  },
+  value: {},
 });
-
-export default InfoItem;

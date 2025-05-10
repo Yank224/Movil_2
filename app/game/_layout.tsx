@@ -1,32 +1,36 @@
+// app/game/_layout.tsx
+
 import React from 'react'
 import { Stack, useRouter } from 'expo-router'
 import { Pressable, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../../context/ThemeContext'
-import { LanguageProvider } from '../../context/LanguageContext'  // Asegúrate de importar LanguageProvider
+import { LanguageProvider } from '../../context/LanguageContext'
+import SettingsMenu from '../components/SettingsMenu'
 
 export default function GameLayout() {
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
   const isDark = theme === 'dark'
   const router = useRouter()
 
   return (
-    <LanguageProvider> {/* Envuelve todo en LanguageProvider */}
-      <Stack>
+    <LanguageProvider>
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: isDark ? '#000' : '#fff' },
+          headerTintColor: isDark ? '#fff' : '#000',
+        }}
+      >
         <Stack.Screen
           name="[id]"
           options={{
             title: '',
-            headerStyle: { backgroundColor: isDark ? '#000' : '#fff' },
-            headerTintColor: isDark ? '#fff' : '#000',
+            // Oculta el texto del back, dejamos solo la flecha
             headerBackTitle: '',
 
-            // Botón izquierda: retroceder
+            // Botón izquierda: flecha atrás
             headerLeft: () => (
-              <Pressable
-                onPress={() => router.back()}
-                style={styles.leftButton}
-              >
+              <Pressable onPress={() => router.back()} style={styles.leftButton}>
                 <Ionicons
                   name="arrow-back"
                   size={24}
@@ -35,17 +39,10 @@ export default function GameLayout() {
               </Pressable>
             ),
 
-            // Botón derecha: toggle tema
+            // Botón derecha: engranaje que levanta tu SettingsMenu
             headerRight: () => (
-              <Pressable
-                onPress={() => setTheme(isDark ? 'light' : 'dark')}
-                style={styles.rightButton}
-              >
-                <Ionicons
-                  name={isDark ? 'moon' : 'sunny'}
-                  size={24}
-                  color={isDark ? '#fff' : '#000'}
-                />
+              <Pressable style={styles.rightButton}>
+                <SettingsMenu />
               </Pressable>
             ),
           }}

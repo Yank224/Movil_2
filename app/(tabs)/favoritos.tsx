@@ -1,138 +1,177 @@
+// app/(tabs)/favoritos.tsx
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { SafeAreaView, FlatList, Image, Text, StyleSheet, View, TouchableOpacity } from 'react-native';
+import {
+  SafeAreaView,
+  FlatList,
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Pressable,
+  Modal,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getFavorites, removeFavorite, Favorite } from '../../service/favoritesService';
 import { useRouter } from 'expo-router';
+
+// 🔥 Import correcto de auth/signOut
 import { auth } from '../../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+
 import { useLanguage } from '../../context/LanguageContext';
 import translations from '../../translations/Translations';
 import SearchBar from '../_game_components/SearchBar';
 import FilterModal from '../_game_components/FilterModal';
-import GameCard from '../_game_components/GameCard';
+import { useTheme } from '../../context/ThemeContext';
+import SettingsMenu from '../components/SettingsMenu';
 
 export default function FavoritosScreen() {
-  const { language, toggleLanguage } = useLanguage(); // Accede al idioma actual y a la función de cambio
+  const router = useRouter();
+  const { language } = useLanguage();
+  const t = translations[language];
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [query, setQuery] = useState('');
   const [genre, setGenre] = useState<string | null>(null);
   const [platform, setPlatform] = useState<string | null>(null);
   const [topN, setTopN] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
-  const router = useRouter();
 
+  // Menú usuario
   const [user, setUser] = useState<any>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
-  // Obtener los datos del usuario autenticado
+  // Observador de auth
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        setUser(null);
-      }
-    });
-    return unsubscribe;
+    const unsub = onAuthStateChanged(auth, u => setUser(u));
+    return unsub;
   }, []);
 
   // Cargar favoritos al enfocar
   useFocusEffect(
     useCallback(() => {
-      const fetchFavorites = async () => {
-        const favs = await getFavorites();
-        setFavorites(favs);
-      };
-      fetchFavorites();
+      getFavorites().then(setFavorites);
     }, [])
   );
 
-  // Quitar favorito
+  // Eliminar favorito
   const handleRemoveFavorite = async (id: string) => {
     await removeFavorite(Number(id));
-    setFavorites(prev => prev.filter(f => f.id !== id));
+    setFavorites(favs => favs.filter(f => f.id.toString() !== id));
   };
 
-  // Géneros y plataformas disponibles
+  // Opciones de filtro
   const availableGenres = useMemo(() => {
-    const s = new Set<string>();
-    favorites.forEach(f => s.add(f.genre));
+    const s = new Set(favorites.map(f => f.genre));
     return ['(todos)', ...Array.from(s)];
   }, [favorites]);
-
   const availablePlatforms = useMemo(() => {
-    const s = new Set<string>();
-    favorites.forEach(f => s.add(f.platform));
+    const s = new Set(favorites.map(f => f.platform));
     return ['(todos)', ...Array.from(s)];
   }, [favorites]);
-
-  // Filtro compuesto
   const filtered = useMemo(() => {
-    let arr = [...favorites];
-    if (query) {
-      const q = query.toLowerCase();
-      arr = arr.filter(f => f.title.toLowerCase().includes(q));
-    }
-    if (genre && genre !== '(todos)') {
-      arr = arr.filter(f => f.genre.toLowerCase() === genre.toLowerCase());
-    }
-    if (platform && platform !== '(todos)') {
-      arr = arr.filter(f => f.platform.toLowerCase() === platform.toLowerCase());
-    }
-    if (topN > 0) {
-      arr = arr.slice(0, topN);
-    }
-    return arr;
+    return favorites
+      .filter(f => !query || f.title.toLowerCase().includes(query.toLowerCase()))
+      .filter(f => !genre || genre === '(todos)' || f.genre === genre)
+      .filter(f => !platform || platform === '(todos)' || f.platform === platform)
+      .slice(0, topN > 0 ? topN : undefined);
   }, [favorites, query, genre, platform, topN]);
 
-  // Usamos las traducciones basadas en el idioma actual
-  const { noPlayers, welcome, changeLang } = translations[language];
+  // Cerrar sesión
+  const onLogout = async () => {
+    await signOut(auth);
+    router.replace('/'); // ajusta tu ruta de login
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Mostrar nombre y foto del usuario si está autenticado */}
+    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#000' : '#fff' }]}>
+      {/* ⚙️ Menú general */}
+      <View style={styles.settings}>
+        <SettingsMenu />
+      </View>
+
+      {/* Avatar / Usuario */}
       {user && (
-        <View style={styles.userInfoContainer}>
-          <Image source={{ uri: user.photoURL }} style={styles.userImage} />
-          <Text style={styles.userName}>{user.displayName}</Text>
-        </View>
+        <>
+          <Pressable
+            onPress={() => setShowUserMenu(true)}
+            style={[styles.userInfo, { backgroundColor: isDark ? '#333' : '#eee' }]}
+          >
+            <Image source={{ uri: user.photoURL }} style={styles.userImage} />
+            <Text style={[styles.userName, { color: isDark ? '#fff' : '#000' }]}>
+              {user.displayName}
+            </Text>
+          </Pressable>
+
+          {/* Modal menú usuario */}
+          <Modal
+            visible={showUserMenu}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowUserMenu(false)}
+          >
+            <Pressable style={styles.backdrop} onPress={() => setShowUserMenu(false)}>
+              <View style={[styles.userMenu, { backgroundColor: isDark ? '#333' : '#fff' }]}>
+                <Pressable onPress={onLogout} style={styles.userMenuItem}>
+                  <Text style={[styles.userMenuText, { color: isDark ? '#fff' : '#000' }]}>
+                    {t.logout}
+                  </Text>
+                </Pressable>
+              </View>
+            </Pressable>
+          </Modal>
+        </>
       )}
 
-      {/* Botón para cambiar idioma */}
-      <TouchableOpacity style={styles.changeLanguageButton} onPress={toggleLanguage}>
-        <Text style={styles.changeLanguageText}>{changeLang}</Text>
-      </TouchableOpacity>
-
-      <View style={{ paddingTop: 10, paddingHorizontal: 16 }}>
-        <Text style={styles.welcomeText}>{welcome}</Text>
+      {/* Bienvenida + Buscador */}
+      <View style={styles.topSection}>
+        <Text style={[styles.welcome, { color: isDark ? '#fff' : '#000' }]}>
+          {t.welcome}
+        </Text>
         <SearchBar
           query={query}
           onChange={setQuery}
           onOpenFilters={() => setShowFilters(true)}
         />
       </View>
-  
+
+      {/* Lista de favoritos */}
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.itemContainer}>
-            <TouchableOpacity onPress={() => router.push(`/game/${item.id}`)}>
-              <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
-              <Text style={styles.title}>{item.title}</Text>
-            </TouchableOpacity>
-            {/* Botón para quitar de favoritos */}
-            <TouchableOpacity onPress={() => handleRemoveFavorite(item.id.toString())} style={styles.removeButton}>
-              <Text style={styles.removeButtonText}>{translations[language].removeFavorite}</Text>
-            </TouchableOpacity>
+        keyExtractor={item => item.id.toString()}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={() => (
+          <View style={styles.empty}>
+            <Text style={[styles.emptyText, { color: isDark ? '#888' : '#666' }]}>
+              {t.noPlayers}
+            </Text>
           </View>
         )}
-        ListEmptyComponent={() => (
-          <View style={styles.noResultsContainer}>
-            <Text style={styles.noResultsText}>{noPlayers}</Text>
+        renderItem={({ item }) => (
+          <View style={[styles.card, { backgroundColor: isDark ? '#222' : '#f5f5f5' }]}>
+            <TouchableOpacity
+              onPress={() => router.push(`/game/${item.id}`)}
+              style={styles.cardTouchable}
+            >
+              <Image source={{ uri: item.thumbnail }} style={styles.thumb} />
+              <Text style={[styles.title, { color: isDark ? '#fff' : '#000' }]}>
+                {item.title}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => handleRemoveFavorite(item.id.toString())}
+              style={[styles.removeBtn, { backgroundColor: isDark ? '#900' : '#c00' }]}
+            >
+              <Text style={styles.removeTxt}>{t.removeFavorite}</Text>
+            </TouchableOpacity>
           </View>
         )}
       />
 
+      {/* Modal Filtros */}
       <FilterModal
         visible={showFilters}
         genres={availableGenres}
@@ -150,135 +189,79 @@ export default function FavoritosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#000', 
-    paddingTop: 40,  // Da algo de espacio en la parte superior para no estar pegado a la barra de estado
-  },
-  userInfoContainer: {
+  container: { flex: 1 },
+  settings: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 12,
+    right: 12,
+    zIndex: 10,
+  },
+  userInfo: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#374151',
+    padding: 6,
     borderRadius: 20,
-    padding: 5,
-    zIndex: 1,
-    flexWrap: 'wrap', // Esto permite que los elementos se ajusten si es necesario
-    width: 'auto',    // Permite que se ajuste dependiendo del contenido
-    justifyContent: 'flex-start',
   },
-  userImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  userName: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
-    flexShrink: 1,  // Permite que el texto se ajuste si es largo
-  },
-
-  changeLanguageButton: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: '#374151',
-    padding: 10,
-    borderRadius: 8,
-    zIndex: 1,
-    width: 'auto', // Permite que el botón se ajuste
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  changeLanguageText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-
-  welcomeText: {
-    fontSize: 20, // Tamaño de fuente más pequeño en pantallas pequeñas
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 10,
-    textAlign: 'center',
-    paddingHorizontal: 16, // Para agregar algo de margen en los lados
-  },
-
-  // Para la búsqueda y los elementos de la lista
-  listContainer: { 
-    padding: 10 
-  },
-
-  itemContainer: {
-    marginBottom: 15,
-    alignItems: 'center',
-    backgroundColor: '#333',
-    borderRadius: 8,
-    padding: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',  // Para distribuir el contenido en pantallas pequeñas
-  },
-  thumbnail: { 
-    width: 100,  // Tamaño reducido para pantallas pequeñas
-    height: 100, 
-    borderRadius: 8,
-  },
-  title: {
-    marginTop: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#fff',
-    flexShrink: 1,  // Asegura que el texto no se desborde
-    marginHorizontal: 10, // Para espacio en pantallas pequeñas
-  },
-
-  removeButton: {
-    marginTop: 10,
-    backgroundColor: '#900',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-  },
-
-  removeButtonText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-
-  noResultsContainer: {
+  userImage: { width: 32, height: 32, borderRadius: 16, marginRight: 8 },
+  userName: { fontSize: 14, fontWeight: '600' },
+  backdrop: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+  },
+  userMenu: {
+    marginTop: 60,
+    marginLeft: 16,
+    borderRadius: 8,
+    paddingVertical: 6,
+    width: 140,
+    elevation: 5,
+  },
+  userMenuItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  userMenuText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  topSection: {
+    paddingTop: 60,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  welcome: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  list: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  empty: {
+    marginTop: 40,
     alignItems: 'center',
-    paddingTop: 20,
   },
-  noResultsText: {
-    color: '#888',
-    fontSize: 14,
+  emptyText: {
+    fontSize: 16,
   },
-
-  // Para pantallas muy pequeñas, ajustamos el tamaño del texto
-  userInfoContainerMobile: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
+  card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#374151',
-    borderRadius: 20,
-    padding: 5,
-    zIndex: 1,
-    maxWidth: '80%', // Evita que el contenido se desborde
-    width: 'auto',
+    marginBottom: 12,
+    borderRadius: 8,
+    padding: 12,
   },
-
-  userNameMobile: {
-    fontSize: 12,
-    marginLeft: 5,
-    color: '#fff',
-  },
+  cardTouchable: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  thumb: { width: 64, height: 64, borderRadius: 6, marginRight: 12 },
+  title: { flexShrink: 1, fontSize: 16, fontWeight: '600' },
+  removeBtn: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
+  removeTxt: { color: '#fff', fontSize: 14, fontWeight: '500' },
 });

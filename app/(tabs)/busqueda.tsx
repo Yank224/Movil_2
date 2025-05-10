@@ -7,14 +7,16 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import SearchBar from '../_game_components/SearchBar';
 import GameCard from '../_game_components/GameCard';
 import FilterModal from '../_game_components/FilterModal';
-
+import SettingsMenu from '../components/SettingsMenu';
 import { addFavorite, removeFavorite, getFavorites } from '../../service/favoritesService';
+import { useTheme } from '../../context/ThemeContext';
 
 interface Game {
   id: number;
@@ -26,23 +28,20 @@ interface Game {
 
 export default function BusquedaScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
-  // Estados principales
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
 
-  // Estados de filtros
   const [query, setQuery] = useState('');
   const [genre, setGenre] = useState<string | null>(null);
   const [platform, setPlatform] = useState<string | null>(null);
   const [topN, setTopN] = useState(0);
-
-  // Control del modal
   const [showFilters, setShowFilters] = useState(false);
 
-  // Carga inicial
   useEffect(() => {
     (async () => {
       try {
@@ -52,7 +51,6 @@ export default function BusquedaScreen() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: Game[] = await res.json();
         setGames(data);
-
         const favs = await getFavorites();
         setFavorites(new Set(favs.map(f => +f.id)));
       } catch (e: any) {
@@ -63,7 +61,6 @@ export default function BusquedaScreen() {
     })();
   }, []);
 
-  // Alternar favorito
   const toggleFav = useCallback(
     async (g: Game) => {
       if (favorites.has(g.id)) {
@@ -74,27 +71,29 @@ export default function BusquedaScreen() {
           return s;
         });
       } else {
-        await addFavorite(g.id, { title: g.title, thumbnail: g.thumbnail, genre: g.genre, platform: g.platform});
+        await addFavorite(g.id, {
+          title: g.title,
+          thumbnail: g.thumbnail,
+          genre: g.genre,
+          platform: g.platform
+        });
         setFavorites(prev => new Set(prev).add(g.id));
       }
     },
     [favorites]
   );
 
-  // Dinámico: géneros y plataformas
   const availableGenres = useMemo(() => {
     const s = new Set<string>();
     games.forEach(g => s.add(g.genre));
     return ['(todos)', ...Array.from(s)];
   }, [games]);
-
   const availablePlatforms = useMemo(() => {
     const s = new Set<string>();
     games.forEach(g => s.add(g.platform));
     return ['(todos)', ...Array.from(s)];
   }, [games]);
 
-  // Filtrado compuesto: búsqueda → género → plataforma → Top N
   const filtered = useMemo(() => {
     let arr = [...games];
     if (query) {
@@ -113,35 +112,55 @@ export default function BusquedaScreen() {
     return arr;
   }, [games, query, genre, platform, topN]);
 
-  // Loader / Error
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#fff" />
+      <View
+        style={[
+          styles.centered,
+          { backgroundColor: isDark ? '#000' : '#fff' },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#00c2ff" />
       </View>
     );
   }
   if (error) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error}</Text>
+      <View
+        style={[
+          styles.centered,
+          { backgroundColor: isDark ? '#000' : '#fff' },
+        ]}
+      >
+        <Text
+          style={[styles.errorText, { color: isDark ? '#fff' : '#000' }]}
+        >
+          {error}
+        </Text>
       </View>
     );
   }
 
-  // Callbacks filtros
-  const onOpenFilters = () => setShowFilters(true);
-  const onSetGenre    = (g: string | null) => setGenre(g);
-  const onSetPlatform = (p: string | null) => setPlatform(p);
-  const onSetTopN     = (n: number) => setTopN(n);
-
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { backgroundColor: isDark ? '#000' : '#fff' },
+      ]}
+    >
+      {/* Espacio superior para no tapar SearchBar */}
+      <View style={styles.headerSpacer} />
+
+      {/* Menú de configuración en esquina */}
+      <View style={styles.settings}>
+        <SettingsMenu />
+      </View>
+
       {/* Barra de búsqueda */}
       <SearchBar
         query={query}
         onChange={setQuery}
-        onOpenFilters={onOpenFilters}
+        onOpenFilters={() => setShowFilters(true)}
       />
 
       {/* Lista de juegos */}
@@ -164,7 +183,11 @@ export default function BusquedaScreen() {
         )}
         ListEmptyComponent={() => (
           <View style={styles.centered}>
-            <Text style={styles.noResults}>Sin resultados</Text>
+            <Text
+              style={[styles.noResults, { color: isDark ? '#888' : '#666' }]}
+            >
+              Sin resultados
+            </Text>
           </View>
         )}
       />
@@ -177,9 +200,9 @@ export default function BusquedaScreen() {
         selectedGenre={genre}
         selectedPlatform={platform}
         topN={topN}
-        onSetGenre={onSetGenre}
-        onSetPlatform={onSetPlatform}
-        onSetTopN={onSetTopN}
+        onSetGenre={setGenre}
+        onSetPlatform={setPlatform}
+        onSetTopN={setTopN}
         onClose={() => setShowFilters(false)}
       />
     </SafeAreaView>
@@ -187,14 +210,18 @@ export default function BusquedaScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000',
+  container: { flex: 1 },
+  headerSpacer: {
+    height: Platform.OS === 'ios' ? 70 : 50, // el espacio original que dejó tu header nativo
   },
-  errorText: { color: 'red' },
+  settings: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 30,
+    right: 16,
+    zIndex: 10,
+  },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorText: { fontSize: 16 },
   list: { paddingVertical: 8 },
-  noResults: { color: '#888', fontSize: 14 },
+  noResults: { fontSize: 14 },
 });
