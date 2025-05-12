@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Image, ScrollView, Pressable, StyleSheet } from 'react-native';
 
 interface GalleryProps {
   screenshots: { id: number; image: string }[];
@@ -10,7 +10,6 @@ interface GalleryProps {
 const Gallery: React.FC<GalleryProps> = ({ screenshots, mainImage, setMainImage }) => {
   return (
     <View style={styles.galleryContainer}>
-      <Text style={styles.sectionTitle}>Galería</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {screenshots.map((shot) => (
           <Pressable
@@ -31,12 +30,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 20,
     paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    color: '#00c2ff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
   },
   thumbnailWrapper: {
     borderRadius: 10,

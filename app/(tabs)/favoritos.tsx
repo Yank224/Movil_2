@@ -15,7 +15,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getFavorites, removeFavorite, Favorite } from '../../service/favoritesService';
 import { useRouter } from 'expo-router';
 
-// 🔥 Import correcto de auth/signOut
 import { auth } from '../../firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 

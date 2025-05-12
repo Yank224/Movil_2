@@ -30,6 +30,13 @@ const translations = {
     publisher: "Publisher",
     platform: "Plataforma",
     comments: "Comentarios",
+    all: "(todos)",         // ← NUEVO
+    noTop: "Sin Top",       // ← NUEVO
+    commentSectionTitle: "Comentarios de usuarios",
+    commentPlaceholderName: "Tu nombre",
+    commentPlaceholderText: "Tu comentario",
+    commentScoreLabel: "Puntuación:",
+    commentSubmitBtn: "Enviar comentario",
   },
   en: {
     loading: "Loading players...",
@@ -61,6 +68,14 @@ const translations = {
     publisher: "Publisher",
     platform: "Platform",
     comments: "Comments",
+    all: "(all)",           // ← NUEVO
+    noTop: "No Top",        // ← NUEVO
+    commentSectionTitle: "User Comments",
+    commentPlaceholderName: "Your name",
+    commentPlaceholderText: "Your comment",
+    commentScoreLabel: "Rating:",
+    commentSubmitBtn: "Submit comment",
+    
   },
 };
 

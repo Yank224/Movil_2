@@ -1,4 +1,3 @@
-// app/game/components/CommentsSection.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -23,9 +22,21 @@ interface Comment {
 
 interface Props {
   gameId: number;
+  sectionTitle: string;
+  placeholderName: string;
+  placeholderText: string;
+  scoreLabel: string;
+  submitLabel: string;
 }
 
-export default function CommentsSection({ gameId }: Props) {
+export default function CommentsSection({
+  gameId,
+  sectionTitle,
+  placeholderName,
+  placeholderText,
+  scoreLabel,
+  submitLabel,
+}: Props) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -37,7 +48,9 @@ export default function CommentsSection({ gameId }: Props) {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch(`https://jsonplaceholder.typicode.com/comments?postId=${gameId}`);
+      const res = await fetch(
+        `https://jsonplaceholder.typicode.com/comments?postId=${gameId}`
+      );
       if (res.ok) {
         const data = await res.json();
         const mapped = data.map((c: any) => ({
@@ -76,7 +89,7 @@ export default function CommentsSection({ gameId }: Props) {
   return (
     <View style={styles.section}>
       <Text style={[styles.title, { color: isDark ? '#00c2ff' : '#0077cc' }]}>
-        Comentarios de usuarios
+        {sectionTitle}
       </Text>
       <TextInput
         style={[
@@ -87,7 +100,7 @@ export default function CommentsSection({ gameId }: Props) {
             borderColor: isDark ? '#444' : '#ccc',
           },
         ]}
-        placeholder="Tu nombre"
+        placeholder={placeholderName}
         placeholderTextColor={isDark ? '#888' : '#666'}
         value={author}
         onChangeText={setAuthor}
@@ -102,7 +115,7 @@ export default function CommentsSection({ gameId }: Props) {
             borderColor: isDark ? '#444' : '#ccc',
           },
         ]}
-        placeholder="Tu comentario"
+        placeholder={placeholderText}
         placeholderTextColor={isDark ? '#888' : '#666'}
         multiline
         value={text}
@@ -110,7 +123,7 @@ export default function CommentsSection({ gameId }: Props) {
       />
       <View style={styles.ratingRow}>
         <Text style={[styles.label, { color: isDark ? '#fff' : '#000' }]}>
-          Puntuación:
+          {scoreLabel}
         </Text>
         {[1, 2, 3, 4, 5].map((n) => (
           <Pressable key={n} onPress={() => setRating(n)}>
@@ -130,7 +143,7 @@ export default function CommentsSection({ gameId }: Props) {
         ]}
         onPress={add}
       >
-        <Text style={styles.buttonText}>Enviar comentario</Text>
+        <Text style={styles.buttonText}>{submitLabel}</Text>
       </TouchableOpacity>
 
       <ScrollView>
@@ -189,7 +202,12 @@ const styles = StyleSheet.create({
   label: { marginRight: 8 },
   star: { marginHorizontal: 2 },
   starSmall: { marginRight: 1 },
-  button: { paddingVertical: 10, borderRadius: 6, alignItems: 'center', marginBottom: 20 },
+  button: {
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   buttonText: { color: '#000', fontWeight: 'bold' },
   card: { padding: 12, borderRadius: 6, marginBottom: 12, borderWidth: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between' },

@@ -41,12 +41,19 @@ export default function FilterModal({
   onClose,
 }: Props) {
   const { language } = useLanguage();
+
+const allLabel = translations[language].all;
+const genresWithAll = [allLabel, ...genres.filter(g => g !== "(todos)" && g !== "(all)")];
+const platformsWithAll = [allLabel, ...platforms.filter(g => g !== "(todos)" && g !== "(all)")];
+
   const {
     filtersTitle,
     genreLabel,
     platformLabel,
     topNLabel,
     applyBtn,
+    all,
+    noTop,
   } = translations[language];
 
   const { theme } = useTheme();
@@ -87,16 +94,16 @@ export default function FilterModal({
             {genreLabel}:
           </Text>
           <FlatList
-            data={genres}
+            data={genresWithAll}
             horizontal
             keyExtractor={(g) => g}
             contentContainerStyle={{ paddingVertical: 8 }}
             renderItem={({ item }) => {
-              const active = selectedGenre === item;
+              const active = (item === all && selectedGenre === null) || selectedGenre === item;
               return (
                 <Pressable
                   onPress={() =>
-                    onSetGenre(item === '(todos)' ? null : item)
+                    onSetGenre(item === all ? null : item)
                   }
                   style={[
                     styles.tag,
@@ -140,16 +147,16 @@ export default function FilterModal({
             {platformLabel}:
           </Text>
           <FlatList
-            data={platforms}
+            data={platformsWithAll}
             horizontal
             keyExtractor={(p) => p}
             contentContainerStyle={{ paddingVertical: 8 }}
             renderItem={({ item }) => {
-              const active = selectedPlatform === item;
+              const active = (item === all && selectedPlatform === null) || selectedPlatform === item;
               return (
                 <Pressable
                   onPress={() =>
-                    onSetPlatform(item === '(todos)' ? null : item)
+                    onSetPlatform(item === all ? null : item)
                   }
                   style={[
                     styles.tag,
@@ -217,7 +224,7 @@ export default function FilterModal({
                 { color: isDark ? '#ccc' : '#333' },
               ]}
             >
-              {topN > 0 ? `Top ${topN}` : 'Sin Top'}
+              {topN > 0 ? `Top ${topN}` : noTop}
             </Text>
           </View>
 
