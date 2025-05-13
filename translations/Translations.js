@@ -67,7 +67,7 @@ const translations = {
     developer: "Developer",
     publisher: "Publisher",
     platform: "Platform",
-    comments: "Comments",
+    comments: "Comment",
     all: "(all)",           // ← NUEVO
     noTop: "No Top",        // ← NUEVO
     commentSectionTitle: "User Comments",
@@ -80,3 +80,5 @@ const translations = {
 };
 
 export default translations;
+
+// rafaelo porque es grande porque yo ni locooooooooooooooo
